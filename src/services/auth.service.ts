@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { getDatabase } from "../database/db.js";
+import { env } from "../config/env.js";
 
 export interface User {
   id: number;
@@ -13,6 +15,16 @@ export interface RegisterDTO {
   name: string;
   email: string;
   password: string;
+}
+
+export interface LoginDTO {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: Omit<User, "password">;
 }
 
 export class AuthService {
@@ -52,6 +64,50 @@ export class AuthService {
     }
 
     return createdUser;
+  }
+
+  async login(credentials: LoginDTO): Promise<AuthResponse> {
+    const user = this.db
+      .prepare<[string], User & { password: string }>(
+        "SELECT id, name, email, password, created_at FROM users WHERE email = ?"
+      )
+      .get(credentials.email);
+
+    if (!user) {
+      const error = new Error("Invalid email or password");
+      (error as Error & { statusCode: number }).statusCode = 401;
+      throw error;
+    }
+
+    const isMatch = await bcrypt.compare(credentials.password, user.password);
+
+    if (!isMatch) {
+      const error = new Error("Invalid email or password");
+      (error as Error & { statusCode: number }).statusCode = 401;
+      throw error;
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+    };
+
+    const signOptions: jwt.SignOptions = {
+      expiresIn: env.JWT_EXPIRES_IN,
+    };
+
+    const token = jwt.sign(payload, env.JWT_SECRET, signOptions);
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        created_at: user.created_at,
+      },
+    };
   }
 }
 
