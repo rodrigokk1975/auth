@@ -1,10 +1,14 @@
 import express, { type Request, type Response } from "express";
+import path from "node:path";
 import authRoutes from "./routes/auth.routes.js";
 import { notFoundHandler, errorMiddleware } from "./middlewares/error.middleware.js";
 
 const app = express();
 
 app.use(express.json());
+
+// Servir arquivos estáticos da pasta public (front-end de testes)
+app.use(express.static(path.resolve(process.cwd(), "public")));
 
 app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "ok" });

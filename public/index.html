@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth API - Painel de Testes</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --success: #22c55e;
+      --error: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(to right, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    button {
+      padding: 0.7rem 1rem;
+      background: var(--primary);
+      color: #0b1120;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s, opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #334155;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
+    .message {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      word-break: break-word;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--success);
+      color: #86efac;
+    }
+
+    .message.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--error);
+      color: #fca5a5;
+    }
+
+    .token-display {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      word-break: break-all;
+      max-height: 90px;
+      overflow-y: auto;
+      margin: 0.75rem 0;
+    }
+
+    .profile-info {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .profile-info pre {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      overflow-x: auto;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status-badge.logged-in {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+    }
+
+    .status-badge.logged-out {
+      background: rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔐 Auth API - Painel de Testes</h1>
+    <p>Teste o cadastro, login com JWT e rota protegida em tempo real</p>
+  </header>
+
+  <div class="container">
+    
+    <!-- CARD 1: CADASTRO -->
+    <div class="card">
+      <h2>👤 1. Criar Conta</h2>
+      <form id="register-form">
+        <div class="form-group">
+          <label for="reg-name">Nome Completo</label>
+          <input type="text" id="reg-name" placeholder="Ex: Rodrigo Silva" required minlength="2">
+        </div>
+        <div class="form-group">
+          <label for="reg-email">E-mail</label>
+          <input type="email" id="reg-email" placeholder="rodrigo@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Senha (mínimo 6 caracteres)</label>
+          <input type="password" id="reg-password" placeholder="••••••••" required minlength="6">
+        </div>
+        <button type="submit" id="reg-btn">Cadastrar Usuário</button>
+      </form>
+      <div id="reg-msg" class="message"></div>
+    </div>
+
+    <!-- CARD 2: LOGIN -->
+    <div class="card">
+      <h2>🔑 2. Fazer Login</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">E-mail</label>
+          <input type="email" id="login-email" placeholder="rodrigo@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" id="login-btn">Entrar e Gerar JWT</button>
+      </form>
+      <div id="login-msg" class="message"></div>
+    </div>
+
+    <!-- CARD 3: ROTA PROTEGIDA -->
+    <div class="card full-width">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>🛡️ 3. Rota Protegida (<code>GET /auth/me</code>)</h2>
+        <span id="auth-status" class="status-badge logged-out">Não Autenticado</span>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+        Esta requisição só funciona se o cabeçalho <code>Authorization: Bearer &lt;token&gt;</code> for enviado com um token JWT válido.
+      </p>
+
+      <div style="margin-top: 1rem;">
+        <label>Token JWT Atual Armazenado:</label>
+        <div id="token-box" class="token-display">Nenhum token salvo. Faça login para obter um.</div>
+      </div>
+
+      <div class="actions">
+        <button id="fetch-profile-btn" class="btn-secondary">Buscar Perfil Protegido (/auth/me)</button>
+        <button id="logout-btn" class="btn-danger" style="display: none;">Sair (Logout)</button>
+      </div>
+
+      <div id="profile-msg" class="message"></div>
+      
+      <div id="profile-box" class="profile-info" style="display: none;">
+        <label style="margin-bottom: 0.5rem;">Dados Retornados da API:</label>
+        <pre id="profile-data"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const TOKEN_KEY = "auth_api_jwt_token";
+
+    // Elementos da UI
+    const regForm = document.getElementById("register-form");
+    const regMsg = document.getElementById("reg-msg");
+    const regBtn = document.getElementById("reg-btn");
+
+    const loginForm = document.getElementById("login-form");
+    const loginMsg = document.getElementById("login-msg");
+    const loginBtn = document.getElementById("login-btn");
+
+    const authStatus = document.getElementById("auth-status");
+    const tokenBox = document.getElementById("token-box");
+    const fetchProfileBtn = document.getElementById("fetch-profile-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const profileMsg = document.getElementById("profile-msg");
+    const profileBox = document.getElementById("profile-box");
+    const profileData = document.getElementById("profile-data");
+
+    // Atualiza status do token na UI
+    function updateTokenUI() {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        tokenBox.textContent = token;
+        authStatus.textContent = "Autenticado com Sucesso";
+        authStatus.className = "status-badge logged-in";
+        logoutBtn.style.display = "inline-block";
+      } else {
+        tokenBox.textContent = "Nenhum token salvo. Faça login para obter um.";
+        authStatus.textContent = "Não Autenticado";
+        authStatus.className = "status-badge logged-out";
+        logoutBtn.style.display = "none";
+        profileBox.style.display = "none";
+      }
+    }
+
+    function showMessage(element, text, type) {
+      element.className = `message ${type}`;
+      element.innerHTML = text;
+    }
+
+    // 1. Cadastrar
+    regForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      regBtn.disabled = true;
+      regMsg.style.display = "none";
+
+      const name = document.getElementById("reg-name").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const password = document.getElementById("reg-password").value;
+
+      try {
+        const res = await fetch("/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage(regMsg, `✅ Usuário <strong>${data.user.name}</strong> cadastrado com sucesso (ID: ${data.user.id})! Agora faça o login.`, "success");
+          document.getElementById("login-email").value = email;
+          document.getElementById("login-password").focus();
+        } else {
+          let errorText = data.error || "Erro ao cadastrar usuário.";
+          if (data.errors) {
+            errorText = data.errors.map(err => `• ${err.message}`).join("<br>");
+          }
+          showMessage(regMsg, `❌ ${errorText}`, "error");
+        }
+      } catch (err) {
+        showMessage(regMsg, "❌ Não foi possível conectar à API.", "error");
+      } finally {
+        regBtn.disabled = false;
+      }
+    });
+
+    // 2. Login
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginBtn.disabled = true;
+      loginMsg.style.display = "none";
+
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+
+      try {
+        const res = await fetch("/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem(TOKEN_KEY, data.token);
+          updateTokenUI();
+          showMessage(loginMsg, `✅ Bem-vindo(a), <strong>${data.user.name}</strong>! Token JWT emitido e salvo.`, "success");
+        } else {
+          let errorText = data.error || "Credenciais inválidas.";
+          if (data.errors) {
+            errorText = data.errors.map(err => `• ${err.message}`).join("<br>");
+          }
+          showMessage(loginMsg, `❌ ${errorText}`, "error");
+        }
+      } catch (err) {
+        showMessage(loginMsg, "❌ Erro ao conectar ao servidor.", "error");
+      } finally {
+        loginBtn.disabled = false;
+      }
+    });
+
+    // 3. Buscar Perfil Protegido
+    fetchProfileBtn.addEventListener("click", async () => {
+      profileMsg.style.display = "none";
+      const token = localStorage.getItem(TOKEN_KEY);
+
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      try {
+        const res = await fetch("/auth/me", { headers });
+        const data = await res.json();
+
+        if (res.ok) {
+          showMessage(profileMsg, "✅ Rota protegida acessada com sucesso! Token verificado pelo middleware.", "success");
+          profileBox.style.display = "block";
+          profileData.textContent = JSON.stringify(data, null, 2);
+        } else {
+          profileBox.style.display = "none";
+          showMessage(profileMsg, `🔒 Acesso negado (${res.status}): ${data.error}`, "error");
+        }
+      } catch (err) {
+        showMessage(profileMsg, "❌ Erro ao consultar perfil.", "error");
+      }
+    });
+
+    // 4. Logout
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem(TOKEN_KEY);
+      updateTokenUI();
+      showMessage(profileMsg, "ℹ️ Você saiu do sistema. O token foi removido.", "error");
+    });
+
+    // Inicialização
+    updateTokenUI();
+  </script>
+</body>
+</html>
