@@ -4,8 +4,10 @@
   "description": "API de autenticação com Node.js, Express e TypeScript",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "dev": "tsx watch src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rodrigokk1975/auth.git"
@@ -13,12 +15,21 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/rodrigokk1975/auth/issues"
   },
   "homepage": "https://github.com/rodrigokk1975/auth#readme",
   "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
