@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getDatabase } from "../database/db.js";
 import { env } from "../config/env.js";
+import { ConflictError, UnauthorizedError, NotFoundError } from "../errors/app.error.js";
 
 export interface User {
   id: number;
@@ -38,9 +39,7 @@ export class AuthService {
       .get(data.email);
 
     if (existingUser) {
-      const error = new Error("Email already registered");
-      (error as Error & { statusCode: number }).statusCode = 409;
-      throw error;
+      throw new ConflictError("Email already registered");
     }
 
     const saltRounds = 10;
@@ -74,17 +73,13 @@ export class AuthService {
       .get(credentials.email);
 
     if (!user) {
-      const error = new Error("Invalid email or password");
-      (error as Error & { statusCode: number }).statusCode = 401;
-      throw error;
+      throw new UnauthorizedError("Invalid email or password");
     }
 
     const isMatch = await bcrypt.compare(credentials.password, user.password);
 
     if (!isMatch) {
-      const error = new Error("Invalid email or password");
-      (error as Error & { statusCode: number }).statusCode = 401;
-      throw error;
+      throw new UnauthorizedError("Invalid email or password");
     }
 
     const payload = {
@@ -118,9 +113,7 @@ export class AuthService {
       .get(userId);
 
     if (!user) {
-      const error = new Error("User not found");
-      (error as Error & { statusCode: number }).statusCode = 404;
-      throw error;
+      throw new NotFoundError("User not found");
     }
 
     return user;
