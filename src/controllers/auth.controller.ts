@@ -75,6 +75,22 @@ export class AuthController {
       res.status(statusCode).json({ error: errorWithStatus.message ?? "Internal server error" });
     }
   }
+
+  async profile(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const user = await authService.getProfile(req.user.sub);
+      res.status(200).json({ user });
+    } catch (err: unknown) {
+      const errorWithStatus = err as Error & { statusCode?: number };
+      const statusCode = errorWithStatus.statusCode ?? 500;
+      res.status(statusCode).json({ error: errorWithStatus.message ?? "Internal server error" });
+    }
+  }
 }
 
 export const authController = new AuthController();

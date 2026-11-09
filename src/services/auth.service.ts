@@ -109,6 +109,22 @@ export class AuthService {
       },
     };
   }
+
+  async getProfile(userId: number): Promise<Omit<User, "password">> {
+    const user = this.db
+      .prepare<[number], Omit<User, "password">>(
+        "SELECT id, name, email, created_at FROM users WHERE id = ?"
+      )
+      .get(userId);
+
+    if (!user) {
+      const error = new Error("User not found");
+      (error as Error & { statusCode: number }).statusCode = 404;
+      throw error;
+    }
+
+    return user;
+  }
 }
 
 export const authService = new AuthService();
