@@ -4,10 +4,10 @@
   "description": "API de autenticação com Node.js, Express e TypeScript",
   "main": "index.js",
   "scripts": {
-  "dev": "tsx watch src/server.ts",
-  "build": "tsc",
-  "start": "node dist/server.js"
-},
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rodrigokk1975/auth.git"
@@ -21,12 +21,14 @@
   },
   "homepage": "https://github.com/rodrigokk1975/auth#readme",
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
     "express": "^5.3.0"
   },
   "allowScripts": {
