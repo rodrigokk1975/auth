@@ -28,6 +28,10 @@ export interface AuthResponse {
   user: Omit<User, "password">;
 }
 
+// Hash bcrypt fictício pré-computado (10 rounds) para amortizar o tempo quando o usuário não existe,
+// prevenindo enumeração de contas via análise de tempo (timing attacks).
+const DUMMY_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+
 export class AuthService {
   private get db() {
     return getDatabase();
@@ -49,8 +53,22 @@ export class AuthService {
       "INSERT INTO users (name, email, password) VALUES (?, ?, ?)"
     );
 
-    const result = insertStmt.run(data.name, data.email, hashedPassword);
-    const userId = Number(result.lastInsertRowid);
+    let userId: number;
+    try {
+      const result = insertStmt.run(data.name, data.email, hashedPassword);
+      userId = Number(result.lastInsertRowid);
+    } catch (err: unknown) {
+      // Captura condição de corrida se dois registros com o mesmo e-mail ocorrerem simultaneamente
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        (err as { code: string }).code === "SQLITE_CONSTRAINT_UNIQUE"
+      ) {
+        throw new ConflictError("Email already registered");
+      }
+      throw err;
+    }
 
     const createdUser = this.db
       .prepare<[number], Omit<User, "password">>(
@@ -72,13 +90,11 @@ export class AuthService {
       )
       .get(credentials.email);
 
-    if (!user) {
-      throw new UnauthorizedError("Invalid email or password");
-    }
+    // Sempre executa bcrypt.compare para garantir tempo de resposta uniforme (mitiga timing attacks)
+    const passwordToCompare = user ? user.password : DUMMY_HASH;
+    const isMatch = await bcrypt.compare(credentials.password, passwordToCompare);
 
-    const isMatch = await bcrypt.compare(credentials.password, user.password);
-
-    if (!isMatch) {
+    if (!user || !isMatch) {
       throw new UnauthorizedError("Invalid email or password");
     }
 

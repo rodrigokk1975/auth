@@ -344,9 +344,20 @@
       }
     }
 
-    function showMessage(element, text, type) {
+    // Sanitização contra XSS
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showMessage(element, html, type) {
       element.className = `message ${type}`;
-      element.innerHTML = text;
+      element.innerHTML = html;
+      element.style.display = "block";
     }
 
     // 1. Cadastrar
@@ -369,13 +380,15 @@
         const data = await res.json();
 
         if (res.ok) {
-          showMessage(regMsg, `✅ Usuário <strong>${data.user.name}</strong> cadastrado com sucesso (ID: ${data.user.id})! Agora faça o login.`, "success");
+          const safeName = escapeHTML(data.user.name);
+          const safeId = escapeHTML(data.user.id);
+          showMessage(regMsg, `✅ Usuário <strong>${safeName}</strong> cadastrado com sucesso (ID: ${safeId})! Agora faça o login.`, "success");
           document.getElementById("login-email").value = email;
           document.getElementById("login-password").focus();
         } else {
-          let errorText = data.error || "Erro ao cadastrar usuário.";
+          let errorText = escapeHTML(data.error || "Erro ao cadastrar usuário.");
           if (data.errors) {
-            errorText = data.errors.map(err => `• ${err.message}`).join("<br>");
+            errorText = data.errors.map(err => `• ${escapeHTML(err.message)}`).join("<br>");
           }
           showMessage(regMsg, `❌ ${errorText}`, "error");
         }
@@ -407,11 +420,12 @@
         if (res.ok) {
           localStorage.setItem(TOKEN_KEY, data.token);
           updateTokenUI();
-          showMessage(loginMsg, `✅ Bem-vindo(a), <strong>${data.user.name}</strong>! Token JWT emitido e salvo.`, "success");
+          const safeName = escapeHTML(data.user.name);
+          showMessage(loginMsg, `✅ Bem-vindo(a), <strong>${safeName}</strong>! Token JWT emitido e salvo.`, "success");
         } else {
-          let errorText = data.error || "Credenciais inválidas.";
+          let errorText = escapeHTML(data.error || "Credenciais inválidas.");
           if (data.errors) {
-            errorText = data.errors.map(err => `• ${err.message}`).join("<br>");
+            errorText = data.errors.map(err => `• ${escapeHTML(err.message)}`).join("<br>");
           }
           showMessage(loginMsg, `❌ ${errorText}`, "error");
         }
@@ -442,7 +456,8 @@
           profileData.textContent = JSON.stringify(data, null, 2);
         } else {
           profileBox.style.display = "none";
-          showMessage(profileMsg, `🔒 Acesso negado (${res.status}): ${data.error}`, "error");
+          const safeError = escapeHTML(data.error || "Acesso negado");
+          showMessage(profileMsg, `🔒 Acesso negado (${res.status}): ${safeError}`, "error");
         }
       } catch (err) {
         showMessage(profileMsg, "❌ Erro ao consultar perfil.", "error");

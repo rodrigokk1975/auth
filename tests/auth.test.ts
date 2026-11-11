@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import request from "supertest";
+import jwt from "jsonwebtoken";
 import app from "../src/app.js";
 import { getDatabase, closeDatabase } from "../src/database/db.js";
+import { env } from "../src/config/env.js";
 
 describe("Auth API - Integration Tests", () => {
   beforeAll(() => {
@@ -218,6 +220,21 @@ describe("Auth API - Integration Tests", () => {
 
       expect(response.status).toBe(401);
       expect(response.body).toEqual({ error: "Invalid token" });
+    });
+
+    it("deve retornar 401 se o token estiver expirado", async () => {
+      const expiredToken = jwt.sign(
+        { sub: 1, email: "carlos@example.com", name: "Carlos Lima" },
+        env.JWT_SECRET,
+        { expiresIn: -10 }
+      );
+
+      const response = await request(app)
+        .get("/auth/me")
+        .set("Authorization", `Bearer ${expiredToken}`);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: "Token expired" });
     });
   });
 

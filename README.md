@@ -26,7 +26,7 @@ O projeto implementa o ciclo completo de autenticação e proteção de rotas:
   - Middleware global de erros interceptando exceções de forma assíncrona com **Express 5**.
   - Handler para rotas inexistentes (`404 Route not found`).
 - **Testes Automatizados de Ponta a Ponta**:
-  - 15 testes de integração cobrindo 100% dos fluxos com **Vitest** e **Supertest**.
+  - 16 testes de integração cobrindo os cenários essenciais (sucesso, erros de validação, senhas inválidas, unicidade e tokens expirados/adulterados) com **Vitest** e **Supertest**.
   - Banco de dados em memória (`:memory:`) isolado a cada teste.
 
 ---
@@ -35,13 +35,14 @@ O projeto implementa o ciclo completo de autenticação e proteção de rotas:
 
 | Tecnologia | Finalidade | Por que foi escolhida? |
 | :--- | :--- | :--- |
-| **Node.js** (v26+) | Ambiente de execução | Plataforma moderna, não bloqueante e com suporte a ESM nativo. |
+| **Node.js** (v18+) | Ambiente de execução | Plataforma moderna, não bloqueante e com suporte a ESM nativo. |
 | **TypeScript** | Linguagem tipada | Tipagem estrita com `exactOptionalPropertyTypes` e verificação estática de tipos. |
 | **Express 5** | Framework HTTP | Tratamento nativo de rejeições de Promises em middlewares e controllers sem boilerplate. |
 | **better-sqlite3** | Banco de dados | Demonstração de **SQL puro** (DDL/DML) e prepared statements contra SQL Injection. |
 | **Zod** | Validação de dados | Validação em runtime e inferência automática de tipos estáticos TypeScript. |
 | **bcryptjs** | Hash de senhas | Criptografia com salting 100% JavaScript, sem dependência de ferramentas de build C++. |
 | **jsonwebtoken** | Emissão de tokens | Padrão clássico da indústria para geração e verificação de tokens JWT. |
+| **express-rate-limit** | Segurança contra força bruta | Proteção de endpoints sensíveis contra requisições excessivas por IP. |
 | **Vitest + Supertest** | Testes automatizados | Execução de testes de integração sem necessidade de abrir portas reais de rede. |
 | **tsx** | Execução em dev | Compilação ultrarrápida com esbuild e hot-reload integrado. |
 
@@ -61,8 +62,9 @@ auth/
 │   ├── errors/
 │   │   └── app.error.ts        # Hierarquia de classes de erro customizadas
 │   ├── middlewares/
-│   │   ├── auth.middleware.ts  # Validação do header Bearer JWT
-│   │   └── error.middleware.ts # Tratamento global de erros e 404
+│   │   ├── auth.middleware.ts       # Validação do header Bearer JWT
+│   │   ├── error.middleware.ts      # Tratamento global de erros e 404
+│   │   └── rate-limit.middleware.ts # Proteção contra ataques de força bruta
 │   ├── controllers/
 │   │   └── auth.controller.ts  # Recebe requisições, valida esquemas e responde HTTP
 │   ├── services/
@@ -73,9 +75,10 @@ auth/
 │       ├── auth.ts             # Tipos do payload do JWT
 │       └── express.d.ts        # Extensão da interface Request do Express
 ├── tests/
-│   └── auth.test.ts            # Suíte de 15 testes de integração com Vitest
+│   └── auth.test.ts            # Suíte de 16 testes de integração com Vitest
 ├── .env.example                # Modelo de variáveis de ambiente sem segredos reais
 ├── .gitignore                  # Arquivos ignorados (node_modules, .env, bancos SQLite)
+├── LICENSE                     # Licença ISC do projeto
 ├── package.json                # Dependências e scripts do projeto
 ├── tsconfig.json               # Configuração do compilador TypeScript
 └── README.md                   # Documentação completa do projeto
@@ -284,11 +287,16 @@ curl -X GET http://localhost:3000/auth/me \
    - Todas as queries parametrizadas com placeholders (`?`) do `better-sqlite3`.
 3. **Criptografia Forte**:
    - Hashing com `bcrypt` (10 rounds de salt) para proteção contra ataques de força bruta e rainbow tables.
-4. **Proteção contra Enumeração de Usuários**:
-   - Respostas de erro idênticas tanto para e-mail inexistente quanto para senha incorreta no login.
-5. **Respeito ao Princípio do Menor Privilégio no Git**:
+4. **Proteção contra Enumeração e Timing Attacks**:
+   - Respostas de erro idênticas (`Invalid email or password`) para e-mails inexistentes e senhas incorretas.
+   - Amortização de tempo com hash fictício (`DUMMY_HASH`) garantindo que `bcrypt.compare` sempre execute mesmo quando o e-mail não for encontrado, eliminando diferenças no tempo de resposta HTTP.
+5. **Rate Limiting contra Força Bruta**:
+   - Middleware `express-rate-limit` aplicado nas rotas sensíveis de login e cadastro.
+6. **Prevenção de Condições de Corrida**:
+   - Tratamento da constraint de unicidade (`SQLITE_CONSTRAINT_UNIQUE`) no cadastro para garantir resposta `409 Conflict` consistente mesmo em requisições paralelas.
+7. **Respeito ao Princípio do Menor Privilégio no Git**:
    - `.env` e arquivos de banco de dados (`*.sqlite`, `*.db`) protegidos no `.gitignore`.
-6. **Desacoplamento Server / App**:
+8. **Desacoplamento Server / App**:
    - O `server.ts` cuida da porta e rede, enquanto `app.ts` exporta a instância do Express, permitindo testes sem overhead de portas.
 
 ---
@@ -296,6 +304,9 @@ curl -X GET http://localhost:3000/auth/me \
 ## 📜 Histórico de Commits (Conventional Commits)
 
 ```text
+* f9bd14a fix: add rate limiting, timing attack mitigation, xss sanitization and strict env validation
+* 2d239f2 feat: add web interface to test authentication flow
+* c732aa9 docs: complete README with setup and usage examples
 * 508ceac test: add integration tests for auth flow
 * be692d5 refactor: centralize error handling
 * d303a67 feat: add auth middleware and protected profile route
